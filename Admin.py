@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox, Toplevel, simpledialog
+from tkinter import filedialog, messagebox, Toplevel, simpledialog, StringVar
 import threading
 import time
 import subprocess
@@ -11,12 +11,13 @@ import shutil
 from scapy.all import ARP, Ether, srp
 import paramiko
 import ipaddress
+import re
 
 class FileSharingApp:
     def __init__(self, root):
         self.root = root
-        self.root.overrideredirect(True)
-        self.root.configure(bg="#C0C0C0")
+        self.root.title("Admin Dashboard")
+        self.root.configure(bg="#F0F0F0")
 
         self.subnet = None
         self.user_ip_list = []
@@ -24,14 +25,11 @@ class FileSharingApp:
         if not self.sudo_user:
             raise RuntimeError("This script must be run using sudo.")
 
-        self.outer_border = tk.Frame(root, bg="#C0C0C0")
-        self.outer_border.pack(expand=True, fill="both", padx=1, pady=1)
-        self.title_bar = tk.Frame(self.outer_border, bg="white", relief="flat", bd=0)
-        self.title_bar.pack(side="top", fill="x")
-        self.create_custom_title_bar_widgets()
-        self.title_bar_border = tk.Frame(self.outer_border, bg="#C0C0C0", height=1)
-        self.title_bar_border.pack(fill="x")
-        self.content_wrapper = tk.Frame(self.outer_border, bg="#F0F0F0")
+        self.status_var = StringVar()
+        self.status_bar = tk.Label(self.root, textvariable=self.status_var, bd=1, relief=tk.SUNKEN, anchor=tk.W, bg="#F0F0F0", fg="black")
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        self.content_wrapper = tk.Frame(self.root, bg="#F0F0F0")
         self.content_wrapper.pack(expand=True, fill="both")
         self.frame = tk.Frame(self.content_wrapper, bg="#F0F0F0")
         self.frame.place(relx=0.5, rely=0.5, anchor="center")
@@ -39,6 +37,12 @@ class FileSharingApp:
         self.show_loading_ui("Initializing Admin Setup...")
         self.root.after(100, self.run_initial_setup_thread)
         self.root.bind("<Configure>", self.on_resize)
+
+    def update_status_bar(self):
+        if self.subnet:
+            self.status_var.set(f"Current Subnet: {self.subnet}")
+        else:
+            self.status_var.set("Subnet not set")
 
     def show_loading_ui(self, main_text):
         self.clear_frame()
@@ -52,19 +56,6 @@ class FileSharingApp:
         self.angle = 0
         self.animate = True
         self.rotate_loader()
-
-    def create_custom_title_bar_widgets(self):
-        self.title_label = tk.Label(self.title_bar, text="Admin Dashboard", bg="white", fg="black", font=("Segoe UI", 14))
-        self.title_label.pack(side="left", padx=10, pady=6)
-        self.close_btn = tk.Button(self.title_bar, text="×", bg="#C73836", fg="white", font=("Segoe UI", 12, "bold"), bd=0, padx=10, pady=2, activebackground="#A22C2B", activeforeground="white", command=self.root.destroy)
-        self.close_btn.pack(side="right", padx=6, pady=4)
-        def start_move(event): self.x, self.y = event.x, event.y
-        def do_move(event):
-            x, y = self.root.winfo_x() + (event.x - self.x), self.root.winfo_y() + (event.y - self.y)
-            self.root.geometry(f"+{x}+{y}")
-        for widget in [self.title_bar, self.title_label]:
-            widget.bind("<ButtonPress-1>", start_move)
-            widget.bind("<B1-Motion>", do_move)
 
     def rotate_loader(self):
         if self.animate:
@@ -84,10 +75,19 @@ class FileSharingApp:
 
     def run_initial_setup(self):
         self.ensure_ssh_key()
+        self.ensure_user_json_exists()
         if not self.load_subnet():
-            self.root.after(0, self.ask_for_subnet)
+            self.root.after(0, self.update_status_bar)
+            self.root.after(0, lambda: self.ask_for_subnet(is_initial_setup=True))
             return
+        self.root.after(0, self.update_status_bar)
         self.root.after(0, self.run_scan_and_show_menu)
+
+    def ensure_user_json_exists(self):
+        user_file = Path("user.json")
+        if not user_file.exists():
+            with open(user_file, 'w') as f:
+                json.dump({}, f)
 
     def run_scan_and_show_menu(self):
         def scan_thread_target():
@@ -116,8 +116,8 @@ class FileSharingApp:
             with open("subnet.json", "r") as f: data = json.load(f); self.subnet = data.get("subnet"); return self.subnet is not None
         except (FileNotFoundError, json.JSONDecodeError): return False
 
-    def ask_for_subnet(self):
-        self.root.withdraw()
+    def ask_for_subnet(self, is_initial_setup=False):
+
         while True:
             subnet_val = simpledialog.askstring(
                 "Network Configuration",
@@ -126,7 +126,8 @@ class FileSharingApp:
             )
 
             if subnet_val is None:
-                self.root.destroy()
+                if is_initial_setup:
+                    self.root.destroy()
                 return
 
             subnet_val = subnet_val.strip()
@@ -143,6 +144,7 @@ class FileSharingApp:
                 self.subnet = subnet_val
                 with open("subnet.json", "w") as f:
                     json.dump({"subnet": self.subnet}, f, indent=2)
+                self.update_status_bar()
                 break
             except ValueError:
                 messagebox.showerror(
@@ -152,10 +154,13 @@ class FileSharingApp:
                 )
                 continue
 
-        self.root.deiconify()
-        self.root.lift()
+        if is_initial_setup:
+            pass
+
         self.run_scan_and_show_menu()
 
+    def change_subnet(self):
+        self.ask_for_subnet()
 
     def perform_arp_scan_and_map(self):
         arp_request, broadcast = ARP(pdst=self.subnet), Ether(dst="ff:ff:ff:ff:ff:ff")
@@ -171,13 +176,31 @@ class FileSharingApp:
         self.animate = False
         self.clear_frame()
         tk.Label(self.frame, text="Admin Dashboard", font=("Segoe UI", 16), bg="#F0F0F0", fg="black").pack(pady=(10, 20))
-        button_frame = tk.Frame(self.frame, bg="#F0F0F0"); button_frame.pack(pady=20, fill="x", expand=True)
+
+        button_frame = tk.Frame(self.frame, bg="#F0F0F0")
+        button_frame.pack(pady=20, expand=True)
+
         opts = {"font": ("Segoe UI", 11, "bold"), "bg": "white", "fg": "black", "relief": "flat", "bd": 1, "padx": 20, "pady": 12, "width": 20, "activebackground": "#E0E0E0"}
-        tk.Button(button_frame, text="Transfer File", command=self.send_file_ui, **opts).pack(pady=8)
-        tk.Button(button_frame, text="View Active Users", command=self.show_active_users, **opts).pack(pady=8)
-        tk.Button(button_frame, text="Manage Users", command=self.manage_users_dialog, **opts).pack(pady=8)
-        tk.Button(button_frame, text="Execute Command", command=self.select_user_for_command_ui, **opts).pack(pady=8)
-        tk.Button(button_frame, text="Export Public Key", command=self.get_public_key, **opts).pack(pady=8)
+
+        buttons = [
+            ("Transfer File", self.send_file_ui),
+            ("View Active Users", self.show_active_users),
+            ("Manage Users", self.manage_users_dialog),
+            ("Execute Command", self.select_user_for_command_ui),
+            ("Export Public Key", self.get_public_key),
+            ("Change Subnet", self.change_subnet)
+        ]
+
+        row, col = 0, 0
+        for text, command in buttons:
+            btn = tk.Button(button_frame, text=text, command=command, **opts)
+            btn.grid(row=row, column=col, padx=10, pady=8)
+            btn.bind('<Return>', lambda e: e.widget.invoke())
+
+            col += 1
+            if col > 1:
+                col = 0
+                row += 1
 
     def select_user_for_command_ui(self):
         self.root.withdraw()
@@ -185,7 +208,6 @@ class FileSharingApp:
         dialog.title("Select User")
         dialog.configure(bg="#F0F0F0")
 
-        # Bind Escape key to close the dialog
         dialog.bind('<Escape>', lambda event: dialog.destroy())
 
         w, h = 700, 500
@@ -201,15 +223,8 @@ class FileSharingApp:
         scrollbar = tk.Scrollbar(listbox_frame, orient="vertical", command=listbox.yview, relief="flat", bd=0)
         listbox.config(yscrollcommand=scrollbar.set)
         no_users_label = tk.Label(listbox_frame, text="No active users found on the network.", font=("Segoe UI", 11), bg="white", fg="black")
-        if not self.user_ip_list:
-            no_users_label.pack(expand=True)
-        else:
-            scrollbar.pack(side="right", fill="y")
-            listbox.pack(side="left", expand=True, fill="both")
-            for user in self.user_ip_list:
-                listbox.insert(tk.END, f"User: {user['username']:<30} IP: {user['ip']}")
 
-        def on_select():
+        def on_select(event=None):
             selection_indices = listbox.curselection()
             if not selection_indices or not self.user_ip_list:
                 messagebox.showwarning("No Selection", "Please select a user from the list.", parent=dialog)
@@ -219,6 +234,17 @@ class FileSharingApp:
             dialog.withdraw()
             self.execute_command_ui(selected_user)
             dialog.destroy()
+
+        listbox.bind('<Return>', on_select)
+
+        if not self.user_ip_list:
+            no_users_label.pack(expand=True)
+        else:
+            scrollbar.pack(side="right", fill="y")
+            listbox.pack(side="left", expand=True, fill="both")
+            for user in self.user_ip_list:
+                listbox.insert(tk.END, f"User: {user['username']:<30} IP: {user['ip']}")
+            listbox.focus_set()
 
         def on_select_all():
             if not self.user_ip_list:
@@ -230,9 +256,19 @@ class FileSharingApp:
 
         btn_frame = tk.Frame(main_frame, bg="#F0F0F0")
         btn_frame.pack(pady=(15, 0), fill="x", side="bottom")
-        tk.Button(btn_frame, text="Close", command=dialog.destroy, font=("Segoe UI", 11), bg="#E1E1E1", fg="black", bd=0, relief="flat", padx=20, pady=8).pack(side="right")
-        tk.Button(btn_frame, text="Select", command=on_select, font=("Segoe UI", 11, "bold"), bg="#0078D7", fg="white", bd=0, relief="flat", padx=20, pady=8).pack(side="right", padx=5)
-        tk.Button(btn_frame, text="Select All", command=on_select_all, font=("Segoe UI", 11, "bold"), bg="#28A745", fg="white", bd=0, relief="flat", padx=10, pady=8).pack(side="right", padx=0)
+
+        close_btn = tk.Button(btn_frame, text="Close", command=dialog.destroy, font=("Segoe UI", 11), bg="#E1E1E1", fg="black", bd=0, relief="flat", padx=20, pady=8)
+        close_btn.pack(side="right")
+        close_btn.bind('<Return>', lambda e: e.widget.invoke())
+
+        select_btn = tk.Button(btn_frame, text="Select", command=on_select, font=("Segoe UI", 11, "bold"), bg="#0078D7", fg="white", bd=0, relief="flat", padx=20, pady=8)
+        select_btn.pack(side="right", padx=5)
+        select_btn.bind('<Return>', lambda e: e.widget.invoke())
+
+        select_all_btn = tk.Button(btn_frame, text="Select All", command=on_select_all, font=("Segoe UI", 11, "bold"), bg="#28A745", fg="white", bd=0, relief="flat", padx=10, pady=8)
+        select_all_btn.pack(side="right", padx=0)
+        select_all_btn.bind('<Return>', lambda e: e.widget.invoke())
+
         dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
         dialog.grab_set()
         self.root.wait_window(dialog)
@@ -314,14 +350,15 @@ class FileSharingApp:
         btn_style = {"font": ("Segoe UI", 11, "bold"), "bd": 0, "relief": "flat", "fg": "white", "pady": 5, "padx": 15}
         execute_btn = tk.Button(command_frame, text="Execute", command=execute_action, bg="#28A745", **btn_style)
         execute_btn.pack(side="left", padx=(0,5))
+        execute_btn.bind('<Return>', lambda e: e.widget.invoke())
 
         back_btn = tk.Button(command_frame, text="Back", command=go_back, bg="#6C757D", **btn_style)
         back_btn.pack(side="left", padx=0)
+        back_btn.bind('<Return>', lambda e: e.widget.invoke())
 
         output_box.pack(expand=True, fill="both", pady=(10, 0))
         command_entry.focus_set()
 
-        # Bind keyboard shortcuts
         command_entry.bind('<Return>', lambda event: execute_action())
         dialog.bind('<Escape>', lambda event: go_back())
 
@@ -418,14 +455,15 @@ class FileSharingApp:
 
         close_btn = tk.Button(btn_frame, text="Close", command=dialog.destroy, font=("Segoe UI", 11), bg="#E1E1E1", fg="black", bd=0, relief="flat", padx=20, pady=8)
         close_btn.pack(side="right")
+        close_btn.bind('<Return>', lambda e: e.widget.invoke())
 
         refresh_btn = tk.Button(btn_frame, text="Refresh", command=refresh_action, font=("Segoe UI", 11, "bold"), bg="#0078D7", fg="white", bd=0, relief="flat", padx=20, pady=8)
         refresh_btn.pack(side="right", padx=5)
+        refresh_btn.bind('<Return>', lambda e: e.widget.invoke())
+        refresh_btn.focus_set()
 
-        # Bind keyboard shortcuts
         dialog.bind('<Escape>', lambda event: dialog.destroy())
         dialog.bind('<F5>', refresh_action)
-
 
         populate_list()
 
@@ -442,7 +480,6 @@ class FileSharingApp:
         dialog.title("Manage Users")
         dialog.configure(bg="#F0F0F0")
 
-        # Bind Escape key to close the dialog
         dialog.bind('<Escape>', lambda event: dialog.destroy())
 
         w, h = 700, 500
@@ -488,30 +525,68 @@ class FileSharingApp:
             mac_entry.pack()
             def perform_add():
                 u, m = user_entry.get().strip(), mac_entry.get().strip().lower()
-                if not u or not m: messagebox.showerror("Error", "All fields are required.", parent=add_dialog); return
+                if not u or not m:
+                    messagebox.showerror("Error", "All fields are required.", parent=add_dialog)
+                    return
+
+                # Validate MAC address format
+                mac_pattern = re.compile(r'^([0-9a-f]{2}[:\-]{1}){5}([0-9a-f]{2})$')
+                if not mac_pattern.match(m):
+                    messagebox.showerror("Invalid MAC Address", "Please use format XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX.", parent=add_dialog)
+                    return
+
                 data = load(); data[m] = u; save(data); add_dialog.destroy(); refresh()
+
             add_button = tk.Button(add_frame, text="Add User", command=perform_add, font=("Segoe UI", 11, "bold"), bg="#0078D7", fg="white", bd=0, relief="flat", padx=20, pady=8)
             add_button.pack(pady=15)
+            add_button.bind('<Return>', lambda e: e.widget.invoke())
 
-            # Bind Enter key to add user in the add dialog
             add_dialog.bind('<Return>', lambda event: perform_add())
+            add_dialog.bind('<Escape>', lambda event: add_dialog.destroy())
 
             add_dialog.transient(dialog)
             add_dialog.grab_set()
             dialog.wait_window(add_dialog)
 
         def on_delete():
-            if not listbox.curselection(): messagebox.showwarning("No User Selected", "Please select a user to delete.", parent=dialog); return
-            entry = listbox.get(listbox.curselection()[0]); mac = entry.split("MAC:")[1].strip()
-            if messagebox.askyesno("Confirm Deletion", f"Delete this user?\n\n{entry}", parent=dialog):
-                data = {m: u for m, u in load().items() if m.lower() != mac.lower()}; save(data); refresh()
+            if not listbox.curselection():
+                messagebox.showwarning("No User Selected", "Please select a user to delete.", parent=dialog)
+                return
+
+            entry = listbox.get(listbox.curselection()[0])
+            mac_to_delete = ""
+            message_body = ""
+
+            try:
+                parts = entry.split("MAC:")
+                username_info = parts[0].strip()
+                mac_address = parts[1].strip()
+                mac_to_delete = mac_address
+                message_body = f"{username_info}\nMAC: {mac_address}"
+            except IndexError:
+                message_body = entry
+                # Fallback to original logic if split fails
+                mac_to_delete = entry.split("MAC:")[1].strip()
+
+            if messagebox.askyesno("Confirm Deletion", f"Delete this user?\n\n{message_body}", parent=dialog):
+                data = {m: u for m, u in load().items() if m.lower() != mac_to_delete.lower()}
+                save(data)
+                refresh()
 
         btn_frame = tk.Frame(main_frame, bg="#F0F0F0")
         btn_frame.pack(pady=(15, 0), fill="x", side="bottom")
-        tk.Button(btn_frame, text="Close", command=dialog.destroy, font=("Segoe UI", 11), bg="#E1E1E1", fg="black", bd=0, relief="flat", padx=20, pady=8).pack(side="right")
 
-        tk.Button(btn_frame, text="Delete", command=on_delete, font=("Segoe UI", 11, "bold"), bg="#C73836", fg="white", bd=0, relief="flat", padx=20, pady=8).pack(side="right", padx=5)
-        tk.Button(btn_frame, text="Add", command=on_add, font=("Segoe UI", 11, "bold"), bg="#28A745", fg="white", bd=0, relief="flat", padx=20, pady=8).pack(side="right", padx=0)
+        close_btn = tk.Button(btn_frame, text="Close", command=dialog.destroy, font=("Segoe UI", 11), bg="#E1E1E1", fg="black", bd=0, relief="flat", padx=20, pady=8)
+        close_btn.pack(side="right")
+        close_btn.bind('<Return>', lambda e: e.widget.invoke())
+
+        delete_btn = tk.Button(btn_frame, text="Delete", command=on_delete, font=("Segoe UI", 11, "bold"), bg="#C73836", fg="white", bd=0, relief="flat", padx=20, pady=8)
+        delete_btn.pack(side="right", padx=5)
+        delete_btn.bind('<Return>', lambda e: e.widget.invoke())
+
+        add_btn = tk.Button(btn_frame, text="Add", command=on_add, font=("Segoe UI", 11, "bold"), bg="#28A745", fg="white", bd=0, relief="flat", padx=20, pady=8)
+        add_btn.pack(side="right", padx=0)
+        add_btn.bind('<Return>', lambda e: e.widget.invoke())
 
         refresh()
 
@@ -547,8 +622,8 @@ class FileSharingApp:
 
         entry = tk.Entry(source_frame, textvariable=source_path, font=("Segoe UI", 12), state="readonly")
         browse_button = tk.Button(source_frame, text="Browse...", command=select_file, font=("Segoe UI", 11))
-
         browse_button.pack(side="right")
+        browse_button.bind('<Return>', lambda e: e.widget.invoke())
         entry.pack(side="left", expand=True, fill='both', padx=(0, 5))
 
 
@@ -565,7 +640,7 @@ class FileSharingApp:
         results_box = tk.Text(progress_frame, height=10, width=70, font=("Courier", 9), state="disabled", bg="white", bd=1, relief="solid")
         results_box.pack(expand=True, fill="both")
 
-        def send_action():
+        def send_action(event=None):
             local, remote = source_path.get(), dest_entry.get().strip()
             if not local or not remote: messagebox.showerror("Error", "All fields are required.", parent=dialog); return
             if not Path(local).is_file(): messagebox.showerror("Error", "Source file not found.", parent=dialog); return
@@ -605,13 +680,16 @@ class FileSharingApp:
 
         btn_frame = tk.Frame(main_frame, bg="#F0F0F0")
         btn_frame.pack(fill="x", side="bottom", pady=(10,0))
+
         close_btn = tk.Button(btn_frame, text="Close", command=dialog.destroy, font=("Segoe UI", 11), bg="#E1E1E1", fg="black", bd=0, relief="flat", padx=20, pady=8)
         close_btn.pack(side="right")
+        close_btn.bind('<Return>', lambda e: e.widget.invoke())
+
         send_btn = tk.Button(btn_frame, text="Send", command=send_action, font=("Segoe UI", 11, "bold"), bg="#0078D7", fg="white", bd=0, relief="flat", padx=20, pady=8)
         send_btn.pack(side="right", padx=10)
+        send_btn.bind('<Return>', lambda e: e.widget.invoke())
 
-        # Bind keyboard shortcuts
-        dialog.bind('<Return>', lambda event: send_action())
+        dialog.bind('<Return>', send_action)
         dialog.bind('<Escape>', lambda event: dialog.destroy())
 
 

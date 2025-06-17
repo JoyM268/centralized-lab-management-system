@@ -9,23 +9,13 @@ import pwd
 class SSHSetupApp:
     def __init__(self, root):
         self.root = root
-        self.root.overrideredirect(True)
-        self.root.configure(bg="#C0C0C0")
+        self.root.title("Student Setup Assistant")
+        self.root.configure(bg="#F0F0F0")
 
         self.capture_subprocess_output = True
 
-        self.outer_border = tk.Frame(root, bg="#C0C0C0")
-        self.outer_border.pack(expand=True, fill="both", padx=1, pady=1)
-
-        self.title_bar = tk.Frame(self.outer_border, bg="white", relief="flat", bd=0)
-        self.title_bar.pack(side="top", fill="x")
-        self.create_custom_title_bar_widgets()
-
-        self.title_bar_border = tk.Frame(self.outer_border, bg="#C0C0C0", height=1)
-        self.title_bar_border.pack(fill="x")
-
-        self.content_wrapper = tk.Frame(self.outer_border, bg="#F0F0F0")
-        self.content_wrapper.pack(expand=True, fill="both")
+        self.content_wrapper = tk.Frame(self.root, bg="#F0F0F0")
+        self.content_wrapper.pack(expand=True, fill="both", padx=10, pady=10)
 
         self.frame = tk.Frame(self.content_wrapper, bg="#F0F0F0")
         self.frame.place(relx=0.5, rely=0.5, anchor="center")
@@ -48,34 +38,6 @@ class SSHSetupApp:
 
         self.root.after(100, self.run_setup_thread)
         self.root.bind("<Configure>", self.on_resize)
-
-    def create_custom_title_bar_widgets(self):
-        self.title_label = tk.Label(self.title_bar, text="Student Setup Assistant", bg="white",
-                                    fg="black", font=("Segoe UI", 14))
-        self.title_label.pack(side="left", padx=10, pady=6)
-
-        self.close_btn = tk.Button(
-            self.title_bar, text="×", bg="#C73836", fg="white",
-            font=("Segoe UI", 12, "bold"), bd=0, padx=10, pady=2,
-            activebackground="#A22C2B", activeforeground="white",
-            command=self.root.destroy
-        )
-        self.close_btn.pack(side="right", padx=6, pady=4)
-
-        def start_move(event):
-            self.x = event.x
-            self.y = event.y
-
-        def do_move(event):
-            deltax = event.x - self.x
-            deltay = event.y - self.y
-            x = self.root.winfo_x() + deltax
-            y = self.root.winfo_y() + deltay
-            self.root.geometry(f"+{x}+{y}")
-
-        for widget in [self.title_bar, self.title_label]:
-            widget.bind("<ButtonPress-1>", start_move)
-            widget.bind("<B1-Motion>", do_move)
 
     def rotate_loader(self):
         if self.animate:
@@ -162,12 +124,12 @@ class SSHSetupApp:
         self.root.lift()
 
     def show_message(self, title, message, msg_type="info"):
-        def dialog_logic():
-            if msg_type == "info":
-                messagebox.showinfo(title, message)
-            elif msg_type == "error":
-                messagebox.showerror(title, message)
-        self._show_dialog_and_restore(dialog_logic)
+        # No need for the custom dialog logic if we are just using messagebox
+        if msg_type == "info":
+            messagebox.showinfo(title, message)
+        elif msg_type == "error":
+            messagebox.showerror(title, message)
+
 
     def add_key(self):
         def dialog_logic():
@@ -177,7 +139,8 @@ class SSHSetupApp:
             )
             if file_path:
                 self._process_add_key(file_path)
-        self._show_dialog_and_restore(dialog_logic)
+        dialog_logic()
+
 
     def _process_add_key(self, file_path):
         try:
@@ -210,7 +173,6 @@ class SSHSetupApp:
             self.show_message("Error", f"An error occurred while adding the key: {e}", "error")
 
     def delete_key_dialog(self):
-        self.root.withdraw()
         try:
             home_dir = self.get_target_user_home()
             auth_keys_path = os.path.join(home_dir, ".ssh", "authorized_keys")
@@ -219,14 +181,13 @@ class SSHSetupApp:
                 with open(auth_keys_path, 'r') as f:
                     keys = [line.strip() for line in f if line.strip()]
             if not keys:
-                self.root.deiconify()
                 self.show_message("No Keys Found", "The authorized_keys file is empty or does not exist.")
                 return
         except Exception as e:
-            self.root.deiconify()
             self.show_message("Error", f"Could not read authorized keys: {e}", "error")
             return
-        dialog = tk.Toplevel()
+
+        dialog = tk.Toplevel(self.root)
         dialog.title("Select Key to Delete")
         dialog.configure(bg="#F0F0F0")
         dialog_width, dialog_height = 700, 400
@@ -236,7 +197,8 @@ class SSHSetupApp:
         dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
         dialog.resizable(False, False)
         dialog.grab_set()
-        dialog.transient()
+        dialog.transient(self.root)
+
         main_dialog_frame = tk.Frame(dialog, bg="#F0F0F0")
         main_dialog_frame.pack(expand=True, fill="both", padx=20, pady=15)
         tk.Label(main_dialog_frame, text="Select a public key to remove:", font=("Segoe UI", 13), bg="#F0F0F0").pack(pady=(0, 10), anchor="w")
@@ -264,7 +226,6 @@ class SSHSetupApp:
             key_to_delete = keys[selected_index]
             key_display = listbox.get(selected_index)
             if messagebox.askyesno("Confirm Deletion", "Are you sure you want to permanently delete this key?\n\n" + key_display, parent=dialog):
-                dialog.destroy()
                 try:
                     remaining_keys = [k for k in keys if k != key_to_delete]
                     uid, gid = self.get_target_user_ids()
@@ -273,6 +234,7 @@ class SSHSetupApp:
                     os.chown(auth_keys_path, uid, gid)
                     os.chmod(auth_keys_path, 0o600)
                     self.show_message("Success", "The selected key has been deleted.")
+                    dialog.destroy()
                 except Exception as e:
                     self.show_message("Error", f"Failed to delete the key: {e}", "error")
 
@@ -284,8 +246,6 @@ class SSHSetupApp:
         delete_btn.pack(side="right", padx=10)
 
         self.root.wait_window(dialog)
-        self.root.deiconify()
-        self.root.lift()
 
     def on_resize(self, event):
         self.frame.place(relx=0.5, rely=0.5, anchor="center")
