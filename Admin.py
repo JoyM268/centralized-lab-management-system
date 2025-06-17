@@ -529,7 +529,6 @@ class FileSharingApp:
                     messagebox.showerror("Error", "All fields are required.", parent=add_dialog)
                     return
 
-                # Validate MAC address format
                 mac_pattern = re.compile(r'^([0-9a-f]{2}[:\-]{1}){5}([0-9a-f]{2})$')
                 if not mac_pattern.match(m):
                     messagebox.showerror("Invalid MAC Address", "Please use format XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX.", parent=add_dialog)
