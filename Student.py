@@ -6,7 +6,7 @@ import subprocess
 import os
 import pwd
 
-class SSHSetupApp:
+class StudentApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Student Setup Assistant")
@@ -272,5 +272,5 @@ if __name__ == "__main__":
     x = int((screen_width / 2) - (window_width / 2))
     y = int((screen_height / 2) - (window_height / 2))
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-    app = SSHSetupApp(root)
+    app = StudentApp(root)
     root.mainloop()
