@@ -5,6 +5,7 @@ import time
 import subprocess
 import os
 import pwd
+import re
 
 class StudentApp:
     def __init__(self, root):
@@ -53,7 +54,8 @@ class StudentApp:
             steps = [
                 ("Installing OpenSSH server...", self.install_openssh_server),
                 ("Enabling the SSH service...", self.configure_ssh_service),
-                ("Configuring the firewall...", self.configure_firewall)
+                ("Configuring the firewall...", self.configure_firewall),
+                ("Securing SSH configuration...", self.configure_ssh_security)
             ]
             for text, func in steps:
                 self.root.after(0, self.update_progress, text)
@@ -83,6 +85,42 @@ class StudentApp:
     def configure_firewall(self):
         subprocess.run(["ufw", "allow", "ssh"], check=True, capture_output=self.capture_subprocess_output, text=True)
         subprocess.run(["ufw", "enable"], input='y\n', check=True, text=True, capture_output=self.capture_subprocess_output)
+
+    def configure_ssh_security(self):
+        sshd_config_path = "/etc/ssh/sshd_config"
+        try:
+            with open(sshd_config_path, 'r') as f:
+                lines = f.readlines()
+
+            new_lines = []
+            password_auth_found = False
+            pubkey_auth_found = False
+
+            for line in lines:
+                stripped_line = line.strip()
+                if re.match(r'^\s*#?\s*PasswordAuthentication\s+', stripped_line, re.IGNORECASE):
+                    new_lines.append("PasswordAuthentication no\n")
+                    password_auth_found = True
+                elif re.match(r'^\s*#?\s*PubkeyAuthentication\s+', stripped_line, re.IGNORECASE):
+                    new_lines.append("PubkeyAuthentication yes\n")
+                    pubkey_auth_found = True
+                else:
+                    new_lines.append(line)
+
+            if not password_auth_found:
+                new_lines.append("\nPasswordAuthentication no\n")
+            if not pubkey_auth_found:
+                new_lines.append("PubkeyAuthentication yes\n")
+
+            with open(sshd_config_path, 'w') as f:
+                f.writelines(new_lines)
+
+            subprocess.run(["systemctl", "restart", "ssh"], check=True, capture_output=self.capture_subprocess_output, text=True)
+
+        except FileNotFoundError:
+            raise RuntimeError(f"SSHD config file not found at {sshd_config_path}")
+        except Exception as e:
+            raise RuntimeError(f"Failed to modify SSH configuration: {e}")
 
     def get_target_user_home(self):
         sudo_user = os.environ.get("SUDO_USER")
@@ -124,12 +162,10 @@ class StudentApp:
         self.root.lift()
 
     def show_message(self, title, message, msg_type="info"):
-        # No need for the custom dialog logic if we are just using messagebox
         if msg_type == "info":
             messagebox.showinfo(title, message)
         elif msg_type == "error":
             messagebox.showerror(title, message)
-
 
     def add_key(self):
         def dialog_logic():
@@ -140,7 +176,6 @@ class StudentApp:
             if file_path:
                 self._process_add_key(file_path)
         dialog_logic()
-
 
     def _process_add_key(self, file_path):
         try:
