@@ -13,7 +13,7 @@ import paramiko
 import ipaddress
 import re
 
-class FileSharingApp:
+class AdminApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Admin Dashboard")
@@ -713,5 +713,5 @@ if __name__ == "__main__":
     ws, hs = root.winfo_screenwidth(), root.winfo_screenheight()
     x, y = int((ws/2) - (w/2)), int((hs/2) - (h/2))
     root.geometry(f'{w}x{h}+{x}+{y}')
-    app = FileSharingApp(root)
+    app = AdminApp(root)
     root.mainloop()
