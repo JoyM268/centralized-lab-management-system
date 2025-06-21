@@ -4,7 +4,7 @@
 
 A GUI-based solution for system administrators to manage a network of student computers in a lab environment. This system provides tools for remote command execution, file distribution, and user management, all from a central admin dashboard.
 
-## Table of Contents
+## 📋 Table of Contents
 
 - [About The Project](#about-the-project)
 - [How It Works](#how-it-works)
@@ -19,27 +19,27 @@ A GUI-based solution for system administrators to manage a network of student co
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
 
-## About The Project
+## 🚀 About The Project
 
 This project consists of two main applications:
 
-1.  **Admin.py**: A powerful dashboard for the administrator. It discovers active student machines on the network, allows for the execution of commands, and facilitates the transfer of files to single or multiple clients simultaneously.
-2.  **Student.py**: A client-side application that runs on each student's machine. It automates the setup of a secure SSH server and provides a simple interface for managing access keys.
+1.  🖥️ **Admin.py**: A powerful dashboard for the administrator. It discovers active student machines on the network, allows for the execution of commands, and facilitates the transfer of files to single or multiple clients simultaneously.
+2.  💻 **Student.py**: A client-side application that runs on each student's machine. It automates the setup of a secure SSH server and provides a simple interface for managing access keys.
 
 The entire system is built with Python and uses Tkinter for a user-friendly graphical interface, Paramiko for SSH communications, and Scapy for network discovery.
 
-## How It Works
+## ⚙️ How It Works
 
 The system operates on a secure client-server model using SSH:
 
-1.  **Authentication**: The connection is secured using an SSH key pair. The Admin machine holds a private key, while the corresponding public key is distributed to all Student machines.
-2.  **Discovery**: The Admin application performs an ARP scan on a specified network subnet to discover active devices. It then identifies student PCs by matching their MAC addresses with a local `user.json` file, which maps MAC addresses to usernames.
-3.  **Communication**: All actions, such as remote command execution and file transfers, are performed over the secure SSH protocol using the Paramiko library.
-4.  **Concurrency**: The Admin application leverages multithreading to perform tasks on multiple student machines simultaneously, making it efficient for managing an entire lab.
+1.  🔐 **Authentication**: The connection is secured using an SSH key pair. The Admin machine holds a private key, while the corresponding public key is distributed to all Student machines.
+2.  📡 **Discovery**: The Admin application performs an ARP scan on a specified network subnet to discover active devices. It then identifies student PCs by matching their MAC addresses with a local `user.json` file, which maps MAC addresses to usernames.
+3.  🔁 **Communication**: All actions, such as remote command execution and file transfers, are performed over the secure SSH protocol using the Paramiko library.
+4.  ⚡ **Concurrency**: The Admin application leverages multithreading to perform tasks on multiple student machines simultaneously, making it efficient for managing an entire lab.
 
-## Features
+## ✨ Features
 
-### Admin Dashboard
+### 👨‍💻 Admin Dashboard
 
 -   **Automated Setup**: Automatically generates the necessary SSH key pair on first launch.
 -   **Network Configuration**: Prompts for a network subnet (e.g., `192.168.1.0/24`) and allows it to be changed at any time.
@@ -49,14 +49,14 @@ The system operates on a secure client-server model using SSH:
 -   **User Management**: An intuitive interface to add or remove users by mapping a username to a unique MAC address.
 -   **Public Key Exporter**: A simple button to export the admin's public key (`id_rsa.pub`) for distribution to student machines.
 
-### Student Client
+### 🎓 Student Client
 
 -   **One-Click SSH Setup**: Automatically installs and configures `openssh-server`.
 -   **Secure Configuration**: Enables the SSH service, configures the firewall (`ufw`), and hardens the server by disabling password authentication in favor of public key authentication.
 -   **Key Management UI**: A simple interface to add the admin's public key to the `authorized_keys` file or to view and delete existing keys.
 -   **Root Privileges Check**: Ensures the script is run with `sudo` to perform necessary system-level tasks.
 
-## Screenshots
+## 📸 Screenshots
 
 ### Admin Dashboard
 <table>
@@ -100,11 +100,11 @@ The system operates on a secure client-server model using SSH:
  </tr>
 </table>
 
-## Getting Started
+## 🏁 Getting Started
 
 Follow these instructions to get the system up and running in your lab.
 
-### Prerequisites
+### ✅ Prerequisites
 
 -   Both Admin and Student machines must be running a Debian-based Linux distribution (like Ubuntu).
 -   **Python 3**: If not already installed, download it from [python.org](https://www.python.org/downloads/) or use your distribution's package manager.
@@ -119,11 +119,11 @@ Follow these instructions to get the system up and running in your lab.
     pip install -r requirements.txt
     ```
 
-### Installation & Setup
+### 🛠️ Installation & Setup
 
 1.  **Clone the Repository**
     ```
-    git clone https://github.com/JoyM268/centralized-lab-management-system.git
+    git clone [https://github.com/JoyM268/centralized-lab-management-system.git](https://github.com/JoyM268/centralized-lab-management-system.git)
     cd centralized-lab-management-system
     ```
 
@@ -155,13 +155,13 @@ Follow these instructions to get the system up and running in your lab.
 
 The setup is now complete! The administrator can manage all configured student PCs directly from the Admin Dashboard.
 
-## Contributing
+## 🤝 Contributing
 
 Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
 If you have a suggestion that would make this better, please fork the repo and create a pull request.
 
-## License
+## 📜 License
 
 This project is licensed under the MIT License. The license can be viewed [here](https://github.com/JoyM268/centralized-lab-management-system/blob/main/LICENSE).
 
