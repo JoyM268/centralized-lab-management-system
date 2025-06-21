@@ -112,9 +112,15 @@ Follow these instructions to get the system up and running in your lab.
 
 ### Prerequisites
 
-Both Admin and Student machines must be running a Debian-based Linux distribution (like Ubuntu) and have Python 3 installed.
-
--   Install Python dependencies:
+-   Both Admin and Student machines must be running a Debian-based Linux distribution (like Ubuntu).
+-   **Python 3**: The scripts require Python 3. You can download it from [python.org](https://www.python.org/downloads/) or install it using your distribution's package manager.
+-   **Tkinter**: This GUI toolkit is required. If it's not installed with Python by default, you can install it on Debian-based systems with the following command:
+  
+    ```
+    sudo apt-get update && sudo apt-get install python3-tk
+    ```
+-   **Python Packages**: Install the required packages using the `requirements.txt` file.
+  
     ```
     pip install -r requirements.txt
     ```
