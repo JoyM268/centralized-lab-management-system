@@ -129,7 +129,7 @@ Follow these instructions to get the system up and running in your lab.
 
 1.  **Clone the Repository**
     ```
-    git clone [https://github.com/JoyM268/centralized-lab-management-system.git](https://github.com/JoyM268/centralized-lab-management-system.git)
+    git clone https://github.com/JoyM268/centralized-lab-management-system.git
     cd centralized-lab-management-system
     ```
 
