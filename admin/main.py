@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog, StringVar
+from tkinter import messagebox, StringVar
 import threading
 import os
 import json
@@ -34,9 +34,17 @@ class AdminApp:
         self.frame = tk.Frame(self.content_wrapper, bg="#F0F0F0")
         self.frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        self.show_loading_ui("Initializing Admin Setup...")
+        self.show_loading_ui("Starting Admin Dashboard...")
         self.root.after(100, self.run_initial_setup_thread)
         self.root.bind("<Configure>", self.on_resize)
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def on_closing(self):
+        self.animate = False
+        for widget in self.root.winfo_children():
+            if isinstance(widget, tk.Toplevel):
+                widget.destroy()
+        self.root.destroy()
 
     def update_status_bar(self):
         if self.subnet:
@@ -58,13 +66,18 @@ class AdminApp:
         self.rotate_loader()
 
     def rotate_loader(self):
-        if self.animate:
+        if self.animate and hasattr(self, 'canvas') and self.canvas.winfo_exists():
             self.angle = (self.angle - 5) % 360
             self.canvas.itemconfig(self.arc, start=self.angle)
             self.root.after(50, self.rotate_loader)
 
     def clear_frame(self):
-        for widget in self.frame.winfo_children(): widget.destroy()
+        for widget in self.frame.winfo_children():
+            widget.destroy()
+        self.frame.pack_forget()
+        self.frame = tk.Frame(self.content_wrapper, bg="#F0F0F0")
+        self.frame.place(relx=0.5, rely=0.5, anchor="center")
+
 
     def update_progress(self, text):
         if hasattr(self, 'progress_label') and self.progress_label.winfo_exists():
@@ -76,12 +89,16 @@ class AdminApp:
     def run_initial_setup(self):
         ensure_ssh_key(self.sudo_user)
         self.ensure_user_json_exists()
+
         if not self.load_subnet():
-            self.root.after(0, self.update_status_bar)
-            self.root.after(0, lambda: self.ask_for_subnet(is_initial_setup=True))
+            self.root.after(0, self.prompt_for_initial_subnet)
             return
+
         self.root.after(0, self.update_status_bar)
         self.root.after(0, self.run_scan_and_show_menu)
+
+    def prompt_for_initial_subnet(self):
+        self.ask_for_subnet_ui(on_success_callback=self.run_scan_and_show_menu, on_cancel_callback=self.on_closing)
 
     def ensure_user_json_exists(self):
         user_file = Path("user.json")
@@ -90,9 +107,9 @@ class AdminApp:
                 json.dump({}, f)
 
     def run_scan_and_show_menu(self):
+        self.show_loading_ui("Scanning Network...")
         def scan_thread_target():
-            self.root.after(0, self.show_loading_ui, "Scanning Network...")
-            self.root.after(0, self.update_progress, f"Scanning {self.subnet} for active devices...")
+            self.update_progress(f"Scanning {self.subnet} for active devices...")
             self.user_ip_list = perform_arp_scan_and_map(self.subnet)
             self.root.after(0, self.show_main_menu)
         threading.Thread(target=scan_thread_target, daemon=True).start()
@@ -109,34 +126,78 @@ class AdminApp:
         except (FileNotFoundError, json.JSONDecodeError):
             return False
 
-    def ask_for_subnet(self, is_initial_setup=False):
-        while True:
-            subnet_val = simpledialog.askstring("Network Configuration", "Please enter the network subnet to scan (e.g., 192.168.5.0/24):", parent=self.root)
-            if subnet_val is None:
-                if is_initial_setup: self.root.destroy()
+    def ask_for_subnet_ui(self, on_success_callback, on_cancel_callback):
+        self.clear_frame()
+
+        tk.Label(self.frame, text="Network Configuration", font=("Segoe UI", 16, "bold"), bg="#F0F0F0").pack(pady=(10, 5))
+        tk.Label(self.frame, text="Please enter the network subnet to scan.", font=("Segoe UI", 11), bg="#F0F0F0").pack(pady=(0, 15))
+
+        content_frame = tk.Frame(self.frame, bg="#F0F0F0", padx=20, pady=20)
+        content_frame.pack(expand=True, fill="x")
+
+        content_frame.grid_columnconfigure(1, weight=1)
+
+        entry = tk.Entry(content_frame, font=("Segoe UI", 12), width=30)
+        entry.grid(row=0, column=1, sticky="ew")
+        entry.focus_set()
+
+        error_label = tk.Label(content_frame, text="", font=("Segoe UI", 10), fg="red", bg="#F0F0F0")
+        error_label.grid(row=1, column=0, columnspan=2, pady=(5,0))
+
+        def cleanup_and_run(callback):
+            self.root.unbind('<Return>')
+            self.root.unbind('<Escape>')
+            callback()
+
+        def validate_and_proceed():
+            subnet_input = entry.get().strip()
+
+            if not subnet_input:
+                error_label.config(text="The subnet field cannot be empty.")
                 return
-            if not subnet_val.strip():
-                messagebox.showerror("Input Required", "The subnet field cannot be empty.", parent=self.root)
-                continue
+
+            allowed_chars = "0123456789./"
+            if any(char not in allowed_chars for char in subnet_input):
+                error_label.config(text="Input contains invalid characters.\nOnly numbers, periods, and '/' are allowed\n(e.g., 192.168.1.0/24).")
+                return
+
+            if '/' not in subnet_input:
+                error_label.config(text="Invalid format.\nSubnet must include a '/' for CIDR notation\n(e.g., 192.168.1.0/24).")
+                return
+
+            if subnet_input.count('/') > 1:
+                error_label.config(text="Subnet can only contain one '/' character\n(e.g., 192.168.1.0/24).")
+                return
+
             try:
-                ipaddress.ip_network(subnet_val.strip(), strict=False)
-                self.subnet = subnet_val.strip()
-                with open("subnet.json", "w") as f: json.dump({"subnet": self.subnet}, f, indent=2)
+                ipaddress.ip_network(subnet_input, strict=False)
+                self.subnet = subnet_input
+                with open("subnet.json", "w") as f:
+                    json.dump({"subnet": self.subnet}, f, indent=2)
                 self.update_status_bar()
-                break
+                cleanup_and_run(on_success_callback)
             except ValueError:
-                messagebox.showerror("Invalid Format", "The subnet format is invalid. Please use CIDR notation (e.g., 192.168.5.0/24).", parent=self.root)
-        if is_initial_setup: 
-            self.run_scan_and_show_menu()
-        else:
-            self.user_ip_list = perform_arp_scan_and_map(self.subnet)
+                error_label.config(text="Invalid Format.\nPlease use CIDR notation (e.g., 192.168.1.0/24).")
+
+        button_frame = tk.Frame(self.frame, bg="#F0F0F0")
+        button_frame.pack(pady=20)
+
+        continue_btn = tk.Button(button_frame, text="Continue", font=("Segoe UI", 11, "bold"), bg="#0078D7", fg="white", bd=0, relief="flat", padx=20, pady=8, command=validate_and_proceed)
+        continue_btn.pack(side="left", padx=10)
+
+        cancel_btn = tk.Button(button_frame, text="Cancel", font=("Segoe UI", 11), bg="#E1E1E1", fg="black", bd=0, relief="flat", padx=20, pady=8, command=lambda: cleanup_and_run(on_cancel_callback))
+        cancel_btn.pack(side="left")
+
+        self.root.bind('<Return>', lambda event: continue_btn.invoke())
+        self.root.bind('<Escape>', lambda event: cancel_btn.invoke())
 
     def change_subnet(self):
-        self.ask_for_subnet()
+        self.ask_for_subnet_ui(on_success_callback=self.run_scan_and_show_menu, on_cancel_callback=self.show_main_menu)
 
     def show_main_menu(self):
         self.animate = False
         self.clear_frame()
+
         tk.Label(self.frame, text="Admin Dashboard", font=("Segoe UI", 16), bg="#F0F0F0", fg="black").pack(pady=(10, 20))
 
         button_frame = tk.Frame(self.frame, bg="#F0F0F0")
