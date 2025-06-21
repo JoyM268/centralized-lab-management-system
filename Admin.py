@@ -564,7 +564,6 @@ class AdminApp:
                 message_body = f"{username_info}\nMAC: {mac_address}"
             except IndexError:
                 message_body = entry
-                # Fallback to original logic if split fails
                 mac_to_delete = entry.split("MAC:")[1].strip()
 
             if messagebox.askyesno("Confirm Deletion", f"Delete this user?\n\n{message_body}", parent=dialog):
