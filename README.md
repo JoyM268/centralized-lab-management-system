@@ -6,18 +6,18 @@ A GUI-based solution for admin to manage a network of student computers in a lab
 
 ## 📋 Table of Contents
 
--   [About The Project](#about-the-project)
--   [How It Works](#how-it-works)
--   [Features](#features)
--   [Screenshots](#screenshots)
-    -   [Admin Dashboard](#admin-dashboard-1)
-    -   [Student Client](#student-client-1)
--   [Getting Started](#getting-started)
-    -   [Prerequisites](#prerequisites)
-    -   [Installation & Setup](#installation--setup)
--   [Contributing](#contributing)
--   [License](#license)
--   [Acknowledgments](#acknowledgments)
+- [About The Project](#about-the-project)
+- [How It Works](#how-it-works)
+- [Features](#features)
+- [Screenshots](#screenshots)
+    - [Admin Dashboard](#admin-dashboard-1)
+    - [Student Client](#student-client-1)
+- [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Installation & Setup](#installation--setup)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
 
 ## 🚀 About The Project
 
