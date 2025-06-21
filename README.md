@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A GUI-based solution for system administrators to manage a network of student computers in a lab environment. This system provides tools for remote command execution, file distribution, and user management, all from a central admin dashboard.
+A GUI-based solution for admin to manage a network of student computers in a lab environment. This system provides tools for remote command execution, file distribution over SSH, all from a central admin dashboard.
 
 ## 📋 Table of Contents
 
