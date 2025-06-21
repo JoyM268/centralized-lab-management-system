@@ -159,7 +159,7 @@ Follow these instructions to get the system up and running in your lab.
 
     c. Click **"Add Public Key"** and select the `id_rsa.pub` file that you copied from the admin PC.
 
-    **Note**: The student PC setup is a **one-time operation**. Once the admin's key is added, you do not need to run `Student.py` on that machine again for normal operation.
+    **Note**: The student PC setup is a **one-time operation**. Once the admin's key is added, you do not need to run `student/main.py` on that machine again for normal operation.
 
 The setup is now complete! The administrator can manage all configured student PCs directly from the Admin Dashboard.
 
