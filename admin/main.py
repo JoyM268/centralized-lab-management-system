@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, Toplevel, simpledialog, StringVar
+from tkinter import messagebox, simpledialog, StringVar
 import threading
 import os
 import json
@@ -126,7 +126,10 @@ class AdminApp:
                 break
             except ValueError:
                 messagebox.showerror("Invalid Format", "The subnet format is invalid. Please use CIDR notation (e.g., 192.168.5.0/24).", parent=self.root)
-        if is_initial_setup: self.run_scan_and_show_menu()
+        if is_initial_setup: 
+            self.run_scan_and_show_menu()
+        else:
+            self.user_ip_list = perform_arp_scan_and_map(self.subnet)
 
     def change_subnet(self):
         self.ask_for_subnet()

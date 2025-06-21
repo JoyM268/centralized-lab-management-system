@@ -6,25 +6,25 @@ A GUI-based solution for admin to manage a network of student computers in a lab
 
 ## 📋 Table of Contents
 
-- [About The Project](#about-the-project)
-- [How It Works](#how-it-works)
-- [Features](#features)
-- [Screenshots](#screenshots)
-  - [Admin Dashboard](#admin-dashboard-1)
-  - [Student Client](#student-client-1)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation & Setup](#installation--setup)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgments](#acknowledgments)
+-   [About The Project](#about-the-project)
+-   [How It Works](#how-it-works)
+-   [Features](#features)
+-   [Screenshots](#screenshots)
+    -   [Admin Dashboard](#admin-dashboard-1)
+    -   [Student Client](#student-client-1)
+-   [Getting Started](#getting-started)
+    -   [Prerequisites](#prerequisites)
+    -   [Installation & Setup](#installation--setup)
+-   [Contributing](#contributing)
+-   [License](#license)
+-   [Acknowledgments](#acknowledgments)
 
 ## 🚀 About The Project
 
 This project consists of two main applications:
 
-1.  🖥️ **Admin.py**: A powerful dashboard for the admin. It discovers active student machines on the network, allows for the execution of commands, and facilitates the transfer of files to single or multiple clients simultaneously.
-2.  💻 **Student.py**: A application that runs on each student's machine. It automates the setup of a secure SSH server and provides a simple interface for managing access keys.
+1.  🖥️ **Admin**: A powerful dashboard for the admin. It discovers active student machines on the network, allows for the execution of commands, and facilitates the transfer of files to single or multiple clients simultaneously.
+2.  💻 **Student**: A application that runs on each student's machine. It automates the setup of a secure SSH server and provides a simple interface for managing access keys.
 
 The entire system is built with Python and uses Tkinter for a user-friendly graphical interface, Paramiko for SSH communications, and Scapy for network discovery.
 
@@ -59,34 +59,36 @@ The system operates on a secure client-server model using SSH:
 ## 📸 Screenshots
 
 ### Admin Dashboard
+
 <table>
  <tr>
     <td align="center"><strong>Main Menu</strong></td>
     <td align="center"><strong>Active Users</strong></td>
  </tr>
  <tr>
-    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/Admin/main_menu.png" width="400"></td>
-    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/Admin/active_users.png" width="400"></td>
+    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/admin/main_menu.png" width="400"></td>
+    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/admin/active_users.png" width="400"></td>
  </tr>
  <tr>
     <td align="center"><strong>Remote Command Execution</strong></td>
     <td align="center"><strong>File Transfer</strong></td>
  </tr>
  <tr>
-    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/Admin/execute_command.png" width="400"></td>
-    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/Admin/file_sharing.png" width="400"></td>
+    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/admin/execute_command.png" width="400"></td>
+    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/admin/file_sharing.png" width="400"></td>
  </tr>
   <tr>
     <td align="center"><strong>Manage Users</strong></td>
     <td align="center"><strong>Add User</strong></td>
  </tr>
    <tr>
-    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/Admin/manage_users.png" width="400"></td>
-    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/Admin/add_user.png" width="320"></td>
+    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/admin/manage_users.png" width="400"></td>
+    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/admin/add_user.png" width="320"></td>
  </tr>
 </table>
 
 ### Student Client
+
 <table>
  <tr>
     <td align="center"><strong>Main Menu</strong></td>
@@ -94,9 +96,9 @@ The system operates on a secure client-server model using SSH:
     <td align="center"><strong>Delete Public Key</strong></td>
  </tr>
  <tr>
-    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/Student/main_menu.png" width="260"></td>
-    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/Student/add_key.png" width="260"></td>
-    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/Student/delete_key.png" width="260"></td>
+    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/student/main_menu.png" width="260"></td>
+    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/student/add_key.png" width="260"></td>
+    <td align="center"><img src="https://github.com/JoyM268/centralized-lab-management-system/blob/main/images/student/delete_key.png" width="260"></td>
  </tr>
 </table>
 
@@ -109,12 +111,13 @@ Follow these instructions to get the system up and running in your lab.
 -   Both Admin and Student machines must be running a Debian-based Linux distribution (like Ubuntu).
 -   **Python 3**: If not already installed, download it from [python.org](https://www.python.org/downloads/) or use your distribution's package manager.
 -   **Tkinter**: To install, run the following command:
-  
+
     ```
     sudo apt-get update && sudo apt-get install python3-tk
     ```
+
 -   **Python Packages**: Install the required packages using the `requirements.txt` file.
-  
+
     ```
     pip install -r requirements.txt
     ```
@@ -122,6 +125,7 @@ Follow these instructions to get the system up and running in your lab.
 ### 🛠️ Installation & Setup
 
 1.  **Clone the Repository**
+
     ```
     git clone [https://github.com/JoyM268/centralized-lab-management-system.git](https://github.com/JoyM268/centralized-lab-management-system.git)
     cd centralized-lab-management-system
@@ -130,8 +134,10 @@ Follow these instructions to get the system up and running in your lab.
 2.  **Admin PC Setup**
 
     a. Run the admin application with root privileges:
+
     ```
-    sudo python3 Admin.py
+    cd admin
+    sudo python3 main.py
     ```
 
     b. **First Run**: The app will generate an SSH key pair and prompt you to enter the network subnet to manage (e.g., `192.168.1.0/24`).
@@ -143,8 +149,10 @@ Follow these instructions to get the system up and running in your lab.
 3.  **Student PC Setup**
 
     a. On each student machine, run the student application with root privileges:
+
     ```
-    sudo python3 Student.py
+    cd student
+    sudo python3 main.py
     ```
 
     b. The script will automatically install and configure the SSH server and firewall.
