@@ -23,8 +23,8 @@ A GUI-based solution for admin to manage a network of student computers in a lab
 
 This project consists of two main applications:
 
-1.  🖥️ **Admin.py**: A powerful dashboard for the administrator. It discovers active student machines on the network, allows for the execution of commands, and facilitates the transfer of files to single or multiple clients simultaneously.
-2.  💻 **Student.py**: A client-side application that runs on each student's machine. It automates the setup of a secure SSH server and provides a simple interface for managing access keys.
+1.  🖥️ **Admin.py**: A powerful dashboard for the admin. It discovers active student machines on the network, allows for the execution of commands, and facilitates the transfer of files to single or multiple clients simultaneously.
+2.  💻 **Student.py**: A application that runs on each student's machine. It automates the setup of a secure SSH server and provides a simple interface for managing access keys.
 
 The entire system is built with Python and uses Tkinter for a user-friendly graphical interface, Paramiko for SSH communications, and Scapy for network discovery.
 
@@ -33,7 +33,7 @@ The entire system is built with Python and uses Tkinter for a user-friendly grap
 The system operates on a secure client-server model using SSH:
 
 1.  🔐 **Authentication**: The connection is secured using an SSH key pair. The Admin machine holds a private key, while the corresponding public key is distributed to all Student machines.
-2.  📡 **Discovery**: The Admin application performs an ARP scan on a specified network subnet to discover active devices. It then identifies student PCs by matching their MAC addresses with a local `user.json` file, which maps MAC addresses to usernames.
+2.  📡 **Discovery**: The admin uses the GUI to add each student PC's username and MAC address, creating a user list that is saved for future sessions. When a network scan is performed, the application uses ARP to discover all active devices. It then compares the discovered MAC addresses against the saved user list to identify student PCs and their current IP addresses, which are used to establish the SSH connection.
 3.  🔁 **Communication**: All actions, such as remote command execution and file transfers, are performed over the secure SSH protocol using the Paramiko library.
 4.  ⚡ **Concurrency**: The Admin application leverages multithreading to perform tasks on multiple student machines simultaneously, making it efficient for managing an entire lab.
 
