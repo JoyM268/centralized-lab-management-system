@@ -15,6 +15,7 @@ A GUI-based solution for admin to manage a network of student computers in a lab
 -   [Getting Started](#-getting-started)
     -   [Prerequisites](#-prerequisites)
     -   [Installation & Setup](#️-installation--setup)
+-   [Contributors](#-contributors)
 -   [Contributing](#-contributing)
 -   [License](#-license)
 -   [Acknowledgments](#acknowledgments)
@@ -162,6 +163,15 @@ Follow these instructions to get the system up and running in your lab.
     **Note**: The student PC setup is a **one-time operation**. Once the admin's key is added, you do not need to run `student/main.py` on that machine again for normal operation.
 
 The setup is now complete! The administrator can manage all configured student PCs directly from the Admin Dashboard.
+
+## 👥 Contributors
+
+This project was developed in a team of four:
+
+-   [Joy Mascarenhas](https://github.com/JoyM268/)
+-   [Pratham Manabasannanavar](https://github.com/PrathamManabasannanavar)
+-   [AbdulBasith A Mulla](https://github.com/hauntedknight55)
+-   [Kodeganti Bhanu Shankar](https://github.com/heyitsELECTRO)
 
 ## 🤝 Contributing
 
